@@ -19,7 +19,7 @@ properties:
           memory: 56Gi
         env:
           - name: OLLAMA_MODEL_NAME
-            value: "qwen3:8b"
+            value: "qwen3.5:397b"
           - name: STREAMLIT_SERVER_PORT
             value: "8501"
           - name: NVIDIA_VISIBLE_DEVICES

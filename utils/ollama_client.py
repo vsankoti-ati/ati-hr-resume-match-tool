@@ -20,6 +20,7 @@ class OllamaClient:
         self, 
         base_url: str = None, 
         model_name: str = None,
+        api_key: str = None,
         timeout: int = None
     ):
         """
@@ -28,11 +29,18 @@ class OllamaClient:
         Args:
             base_url: Base URL for Ollama API (default from config)
             model_name: Name of the model to use (default from config)
+            api_key: API key for authentication (default from config)
             timeout: Request timeout in seconds (default from config)
         """
         self.base_url = (base_url or Config.OLLAMA_BASE_URL).rstrip('/')
         self.model_name = model_name or Config.OLLAMA_MODEL_NAME
+        self.api_key = api_key or Config.OLLAMA_API_KEY
         self.timeout = timeout or Config.OLLAMA_TIMEOUT
+        
+        # Set up headers for authentication
+        self.headers = {}
+        if self.api_key:
+            self.headers['Authorization'] = f'Bearer {self.api_key}'
         
         logger.info(f"Initialized Ollama client: {self.base_url}, model: {self.model_name}")
     
@@ -45,7 +53,8 @@ class OllamaClient:
         """
         try:
             response = requests.get(
-                f"{self.base_url}/api/tags",
+                f"{self.base_url}/tags",
+                headers=self.headers,
                 timeout=5
             )
             return response.status_code == 200
@@ -62,7 +71,8 @@ class OllamaClient:
         """
         try:
             response = requests.get(
-                f"{self.base_url}/api/tags",
+                f"{self.base_url}/tags",
+                headers=self.headers,
                 timeout=10
             )
             
@@ -135,8 +145,9 @@ class OllamaClient:
             logger.info(f"Generating with model {self.model_name}, temp={temperature}")
             
             response = requests.post(
-                f"{self.base_url}/api/generate",
+                f"{self.base_url}/generate",
                 json=payload,
+                headers=self.headers,
                 timeout=self.timeout,
                 stream=stream
             )
@@ -200,8 +211,9 @@ class OllamaClient:
                 payload["system"] = system_prompt
             
             response = requests.post(
-                f"{self.base_url}/api/generate",
+                f"{self.base_url}/generate",
                 json=payload,
+                headers=self.headers,
                 timeout=self.timeout,
                 stream=True
             )
@@ -291,7 +303,7 @@ class OllamaClient:
         
         try:
             response = requests.post(
-                f"{self.base_url}/api/show",
+                f"{self.base_url}/show",
                 json={"name": model},
                 timeout=10
             )

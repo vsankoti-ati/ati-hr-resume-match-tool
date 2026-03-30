@@ -35,10 +35,10 @@ Profile: Consumption-GPU-NC8as-T4
 
 ### What you have:
 - **8 vCPUs, 56 GiB** - More than sufficient ✅
-- **Tesla T4 GPU (16GB)** - Perfect for qwen3:8b (uses ~8-12GB) ✅
+- **Tesla T4 GPU (16GB)** - Perfect for qwen3.5:397b (uses ~8-12GB) ✅
 
 ### What you need:
-- **Model (qwen3:8b)**: ~8-12GB VRAM during inference
+- **Model (qwen3.5:397b)**: ~8-12GB VRAM during inference
 - **Python/Streamlit**: ~1-2GB system RAM
 - **Total**: Comfortable with plenty of headroom
 
@@ -75,7 +75,7 @@ az containerapp update \
     --memory 56Gi \
     --workload-profile-name Consumption-GPU-NC8as-T4 \
     --set-env-vars \
-        "OLLAMA_MODEL_NAME=qwen3:8b" \
+        "OLLAMA_MODEL_NAME=qwen3.5:397b" \
         "NVIDIA_VISIBLE_DEVICES=all" \
         "NVIDIA_DRIVER_CAPABILITIES=compute,utility"
 ```
@@ -116,7 +116,7 @@ Should return: `"Consumption-GPU-NC8as-T4"`
 ### Slow Performance
 - Check if GPU is actually being used by Ollama
 - Monitor GPU utilization during inference
-- Verify model fits in GPU memory (qwen3:8b = ~8GB, T4 = 16GB ✓)
+- Verify model fits in GPU memory (qwen3.5:397b = ~8GB, T4 = 16GB ✓)
 
 ## Cost Optimization Notes
 

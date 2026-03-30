@@ -169,21 +169,19 @@
    - Port 8501 exposed
 
 3. ✅ **Docker Compose** ([docker-compose.yaml](docker-compose.yaml))
-   - Three-service architecture:
-     - `ollama-service`: LLM inference API
-     - `python-app`: Streamlit web interface
-     - `ollama-init`: One-time model download
-   - Persistent volumes for models and results
-   - Container networking for localhost communication
-   - Health checks for both services
+   - Single-service architecture using Ollama Cloud API
+   - Python Streamlit web interface with Ollama Cloud integration
+   - Persistent volumes for results and reports
+   - Environment variables for Ollama Cloud authentication
+   - Health checks for Ollama Cloud API connectivity
    - Development volume mounts for hot reload
 
-4. ✅ **Ollama Initialization Script** ([scripts/init-ollama.sh](scripts/init-ollama.sh))
-   - Automated qwen3:8b model download
-   - Service availability checks
-   - Model verification
-   - Executable permissions set
-   - Error handling and logging
+4. ✅ **Ollama Cloud Integration**
+   - Bearer token authentication for Ollama Cloud API
+   - Updated health checks for cloud API endpoints
+   - Model inference testing with authentication headers
+   - Simplified container architecture (no local Ollama)
+   - Environment variable configuration for API keys
 
 5. ✅ **Docker Ignore** ([.dockerignore](.dockerignore))
    - Excludes Git, Python cache, IDE files

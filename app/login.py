@@ -21,13 +21,14 @@ def render_login_page():
     # Check if authentication is enabled
     if not AuthConfig.is_auth_enabled():
         # Auto-authenticate with mock service
-        logger.info("Authentication disabled - using mock authentication")
-        mock_service = get_mock_auth_service()
-        auth_data = mock_service.auto_authenticate()
-        
-        # Store authentication data in session state
-        for key, value in auth_data.items():
-            st.session_state[key] = value
+        with st.spinner("🔄 Initializing session..."):
+            logger.info("Authentication disabled - using mock authentication")
+            mock_service = get_mock_auth_service()
+            auth_data = mock_service.auto_authenticate()
+            
+            # Store authentication data in session state
+            for key, value in auth_data.items():
+                st.session_state[key] = value
         
         st.rerun()
         return
@@ -96,18 +97,19 @@ def display_login_button():
     with col2:
         if st.button("🔐 Sign in with Microsoft", type="primary", use_container_width=True):
             try:
-                # Generate state parameter for CSRF protection
-                state = secrets.token_urlsafe(32)
-                st.session_state.auth_state = state
-                
-                # Get authorization URL
-                auth_service = get_auth_service()
-                auth_url = auth_service.get_auth_url(state=state)
-                
-                logger.info("Redirecting to Azure AD login")
+                with st.spinner("🔄 Preparing authentication..."):
+                    # Generate state parameter for CSRF protection
+                    state = secrets.token_urlsafe(32)
+                    st.session_state.auth_state = state
+                    
+                    # Get authorization URL
+                    auth_service = get_auth_service()
+                    auth_url = auth_service.get_auth_url(state=state)
+                    
+                    logger.info("Redirecting to Azure AD login")
                 
                 # Display redirect message
-                st.info("Redirecting to Microsoft login page...")
+                st.info("✅ Redirecting to Microsoft login page...")
                 
                 # Redirect to Azure AD
                 st.markdown(f'<meta http-equiv="refresh" content="0; url={auth_url}">', unsafe_allow_html=True)
@@ -153,7 +155,7 @@ def handle_auth_callback(query_params: dict):
             return
         
         # Exchange authorization code for access token
-        with st.spinner("Completing sign in..."):
+        with st.spinner("🔄 Exchanging authorization code..."):
             auth_service = get_auth_service()
             token_response = auth_service.acquire_token_by_auth_code(
                 auth_code=auth_code
@@ -172,13 +174,15 @@ def handle_auth_callback(query_params: dict):
         access_token = token_response["access_token"]
         
         # Validate token
-        if not auth_service.validate_token(access_token):
-            st.error("Token validation failed. Please try again.")
-            logger.error("Token validation failed")
-            return
+        with st.spinner("🔐 Validating access token..."):
+            if not auth_service.validate_token(access_token):
+                st.error("Token validation failed. Please try again.")
+                logger.error("Token validation failed")
+                return
         
         # Get user information
-        user_info = auth_service.get_user_info(access_token)
+        with st.spinner("👤 Retrieving user information..."):
+            user_info = auth_service.get_user_info(access_token)
         
         if not user_info:
             st.error("Failed to retrieve user information. Please try again.")

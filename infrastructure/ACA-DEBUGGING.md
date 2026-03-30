@@ -63,21 +63,18 @@ env | grep OLLAMA
 curl http://localhost:11434/api/tags
 curl http://127.0.0.1:11434/api/tags
 
-# List models
-ollama list
+# Test Ollama Cloud API
+curl -H "Authorization: Bearer ${OLLAMA_API_KEY}" https://ollama.com/api/version
 
 # Test inference
-curl http://localhost:11434/api/generate -d '{
-  "model": "qwen3:8b",
-  "prompt": "Hello",
-  "stream": false
-}'
-
-# Check listening ports
-netstat -tuln | grep 11434
-
-# Check if GPU is available
-nvidia-smi
+curl -X POST https://ollama.com/api/generate \
+  -H "Authorization: Bearer ${OLLAMA_API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen3.5:397b",
+    "prompt": "Hello",
+    "stream": false
+  }'
 ```
 
 ---
@@ -207,17 +204,17 @@ Ollama is listening on: 0.0.0.0:11434
 
 **Model Available:**
 ```
-✓ Model qwen3:8b already exists
+✓ Ollama Cloud API accessible
+✓ Model qwen3.5:397b available via cloud
 ```
 
 **Diagnostic Results:**
 ```
-1. Checking Ollama process...
-   ✓ Ollama process is running
+1. Checking Ollama Cloud API...
+   ✓ Ollama Cloud API is accessible
 
-3. Testing Ollama API connectivity...
-   ✓ Ollama API is responding on localhost:11434
-   ✓ Ollama API is responding on 127.0.0.1:11434
+3. Testing API authentication...
+   ✓ Bearer token authentication successful
 
 6. Testing model inference...
    ✓ Inference test successful!
@@ -313,12 +310,10 @@ az containerapp logs show \
 | Stage | Duration | What's Happening |
 |-------|----------|------------------|
 | Container start | 10-30s | Pulling image, starting container |
-| Ollama startup | 5-10s | Ollama service initialization |
-| Model check | 2-5s | Checking if model exists in volume |
-| Model download (first run only) | 15-30 min | Downloading 20GB qwen3:8b model |
-| Diagnostics | 30-60s | Running connectivity and inference tests |
+| API connectivity check | 2-5s | Testing Ollama Cloud API connection |
+| Authentication check | 1-2s | Validating API key |
+| Diagnostics | 10-20s | Running connectivity and inference tests |
 | Streamlit startup | 10-20s | Starting web server |
-| **Total (first run)** | **~20-35 min** | Model download dominates |
-| **Total (subsequent runs)** | **~1-2 min** | Skip model download |
+| **Total** | **~35-80s** | No model download needed |
 
-After model is downloaded once, it persists in the volume and subsequent restarts are fast.
+Since models are hosted in Ollama Cloud, startup is much faster with no model downloads required.

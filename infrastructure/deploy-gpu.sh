@@ -42,14 +42,13 @@ az containerapp update \
     --name ${ACA_NAME} \
     --resource-group ${RESOURCE_GROUP} \
     --image ${ACR_IMAGE} \
-    --cpu 8.0 \
-    --memory 56Gi \
-    --workload-profile-name Consumption-GPU-NC8as-T4 \
+    --cpu 2.0 \
+    --memory 4.0Gi \
     --set-env-vars \
-        "OLLAMA_MODEL_NAME=qwen3:8b" \
+        "OLLAMA_BASE_URL=https://ollama.com/api" \
+        "OLLAMA_API_KEY=${OLLAMA_API_KEY}" \
+        "OLLAMA_MODEL_NAME=qwen3.5:397b" \
         "STREAMLIT_SERVER_PORT=8501" \
-        "NVIDIA_VISIBLE_DEVICES=all" \
-        "NVIDIA_DRIVER_CAPABILITIES=compute,utility" \
     --min-replicas 1 \
     --max-replicas 1
 
@@ -71,11 +70,8 @@ echo "Deployment Summary"
 echo "=========================================="
 echo "Application URL: https://${APP_URL}"
 echo ""
-echo "To check GPU detection:"
-echo "  az containerapp logs show --name ${ACA_NAME} --resource-group ${RESOURCE_GROUP} --tail 50 | grep -A 2 GPU"
-echo ""
-echo "Expected GPU: NVIDIA Tesla T4 (16GB)"
+echo "Using Ollama Cloud API for inference"
 echo "Expected Performance:"
-echo "  - Model load: 5-10 seconds"
-echo "  - Inference: 2-5 seconds per request"
+echo "  - Startup: 2-5 minutes"
+echo "  - Inference: 3-8 seconds per request"
 echo "=========================================="

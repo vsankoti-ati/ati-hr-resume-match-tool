@@ -1,31 +1,15 @@
-# Stage 1: Get Ollama binary from official image
-FROM ollama/ollama:latest AS ollama-stage
-
-# Stage 2: Build the final application image with GPU support
-FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
+# Build the final application image (Python only, no GPU/Ollama)
+FROM python:3.11-slim
 
 # Set working directory
-WORKDIR /app
+WORKDIR /resume-match-tool
 
-# Install Python 3.11 and system dependencies
+# Install system dependencies for document processing
 RUN apt-get update && apt-get install -y \
-    python3.11 \
-    python3.11-dev \
-    python3-pip \
-    curl \
-    jq \
-    procps \
     poppler-utils \
     libpoppler-cpp-dev \
     ca-certificates \
-    && rm -rf /var/lib/apt/lists/* \
-    && ln -s /usr/bin/python3.11 /usr/bin/python
-
-# Copy Ollama binary from the official image
-COPY --from=ollama-stage /bin/ollama /bin/ollama
-
-# Setup working directory
-WORKDIR /resume-match-tool
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
 COPY requirements.txt /resume-match-tool/requirements.txt
@@ -39,24 +23,25 @@ COPY .env.template /resume-match-tool/.env
 
 # Copy entrypoint script
 COPY scripts/entrypoint.sh /resume-match-tool/entrypoint.sh
-COPY scripts/diagnose-ollama.sh /resume-match-tool/diagnose-ollama.sh
-RUN chmod +x /resume-match-tool/entrypoint.sh /resume-match-tool/diagnose-ollama.sh
+RUN chmod +x /resume-match-tool/entrypoint.sh
 
-# Create directory for Ollama models
-RUN mkdir -p /root/.ollama
+# Create results directory
+RUN mkdir -p /resume-match-tool/results
 
-# Set environment variables (including GPU support)
+# Set environment variables
 ENV PYTHONUNBUFFERED=1 \
-    OLLAMA_BASE_URL=http://localhost:11434 \
-    OLLAMA_HOST=0.0.0.0:11434 \
-    OLLAMA_MODEL_NAME=qwen3:8b \
+    OLLAMA_BASE_URL=https://ollama.com/api \
+    OLLAMA_MODEL_NAME=qwen3.5:397b \
     STREAMLIT_SERVER_PORT=8501 \
     STREAMLIT_SERVER_ADDRESS=0.0.0.0 \
     STREAMLIT_SERVER_HEADLESS=true \
-    STREAMLIT_BROWSER_GATHER_USAGE_STATS=false\
-    OLLAMA_MODELS=/root/.ollama/models \
-    NVIDIA_VISIBLE_DEVICES=all \
-    NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+
+# Expose Streamlit port
+EXPOSE 8501
+
+# Set entrypoint
+ENTRYPOINT ["/resume-match-tool/entrypoint.sh"]
 
 # Expose both Ollama and Streamlit ports
 EXPOSE 11434 8501

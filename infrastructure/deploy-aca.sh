@@ -48,11 +48,11 @@ az containerapp create \
     --min-replicas 1 \
     --max-replicas 1 \
     --env-vars \
-        OLLAMA_MODEL_NAME="qwen3:8b" \
+        OLLAMA_BASE_URL="https://ollama.com/api" \
+        OLLAMA_API_KEY="${OLLAMA_API_KEY}" \
+        OLLAMA_MODEL_NAME="qwen3.5:397b" \
         STREAMLIT_SERVER_PORT="8501" \
         STREAMLIT_SERVER_ADDRESS="0.0.0.0" \
-        OLLAMA_HOST="0.0.0.0:11434" \
-        OLLAMA_BASE_URL="http://localhost:11434" \
     --revision-suffix "v${IMAGE_TAG//./-}"
 
 echo ""
@@ -65,7 +65,9 @@ az containerapp update \
     --name "$ACA_NAME" \
     --resource-group "$RESOURCE_GROUP" \
     --set-env-vars \
-        OLLAMA_MODEL_NAME="qwen3:8b" \
+        OLLAMA_BASE_URL="https://ollama.com/api" \
+        OLLAMA_API_KEY="${OLLAMA_API_KEY}" \
+        OLLAMA_MODEL_NAME="qwen3.5:397b" \
     --cpu 2.0 \
     --memory 4.0Gi
 
@@ -82,8 +84,8 @@ echo "✓ Deployment Complete!"
 echo "=========================================="
 echo "App URL: https://${APP_URL}"
 echo ""
-echo "⚠️  IMPORTANT: First startup will take 15-30 minutes"
-echo "    The container needs to download the Ollama model (~20GB)"
+echo "⚠️  IMPORTANT: First startup will take 2-5 minutes"
+echo "    The container needs to initialize and connect to Ollama Cloud"
 echo ""
 echo "Check deployment status:"
 echo "  az containerapp show -n $ACA_NAME -g $RESOURCE_GROUP"

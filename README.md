@@ -1,6 +1,6 @@
 # ATI HR Resume Match Tool
 
-AI-powered resume matching tool that analyzes candidate profiles against job descriptions using Ollama and Qwen3 8B model.
+AI-powered resume matching tool that analyzes candidate profiles against job descriptions using Ollama Cloud API and Qwen3.5 Cloud model.
 
 ## Features
 
@@ -11,14 +11,43 @@ AI-powered resume matching tool that analyzes candidate profiles against job des
 - 🚨 **Anomaly Detection**: Flag discrepancies in dates, titles, or qualifications
 - 📄 **PDF Export**: Generate professional PDF reports
 - 🎨 **Modern UI**: Clean, intuitive Streamlit interface
+- 🔒 **Privacy Protection**: Automatic PII masking before sending data to cloud AI services
+
+## Privacy & Security
+
+This application prioritizes candidate privacy by automatically masking personally identifiable information (PII) before sending resume data to Ollama Cloud for analysis.
+
+### PII Masking Features
+
+- **Automatic Detection**: Uses Microsoft Presidio to identify sensitive information including:
+  - Names and personal identifiers
+  - Email addresses and phone numbers
+  - Physical addresses and locations
+  - Social security numbers and IDs
+  - Financial information
+  - Medical data
+
+- **Configurable**: PII masking can be enabled/disabled via environment variables
+- **Fallback Method**: Includes regex-based masking as fallback if Presidio is unavailable
+- **Transparency**: Analysis results include PII masking statistics for audit purposes
+
+### Configuration
+
+```bash
+# Enable/disable PII masking
+ENABLE_PII_MASKING=true
+
+# Choose masking method
+PII_MASKING_METHOD=presidio  # 'presidio' (recommended) or 'regex'
+```
 
 ## Quick Start
 
 ### Prerequisites
 
 - Python 3.11+
-- Ollama installed and running
-- Qwen3 8B model pulled in Ollama
+- Ollama Cloud API key (get from https://ollama.com)
+- Docker and Docker Compose
 
 ### Installation
 
@@ -32,30 +61,19 @@ cd ati-hr-resume-match-tool
 pip install -r requirements.txt
 ```
 
-3. **Set up Ollama**
-```bash
-# Install Ollama (if not already installed)
-# Visit: https://ollama.ai
-
-# Pull the Qwen3 8B model
-ollama pull qwen3:8b
-
-# Start Ollama service
-ollama serve
-```
-
-4. **Configure environment** (optional)
+3. **Configure environment**
 ```bash
 cp .env.template .env
-# Edit .env with your settings if needed
+# Edit .env and add your Ollama Cloud API key:
+# OLLAMA_API_KEY=your_api_key_here
 ```
 
-5. **Run the application**
+4. **Run the application**
 ```bash
 streamlit run app/main.py
 ```
 
-6. **Open browser**
+5. **Open browser**
 Navigate to `http://localhost:8501`
 
 ## Usage
@@ -95,10 +113,15 @@ ati-hr-resume-match-tool/
 Environment variables (in `.env`):
 
 ```bash
-# Ollama
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL_NAME=qwen3:8b
+# Ollama Cloud
+OLLAMA_BASE_URL=https://ollama.com/api
+OLLAMA_API_KEY=your_api_key_here
+OLLAMA_MODEL_NAME=qwen3.5:397b
 OLLAMA_TIMEOUT=600
+
+# PII Masking (Privacy Protection)
+ENABLE_PII_MASKING=true
+PII_MASKING_METHOD=presidio  # 'presidio' (recommended) or 'regex'
 
 # Streamlit
 STREAMLIT_SERVER_PORT=8501
@@ -216,23 +239,22 @@ See [plan.md](plan.md) for Docker and Azure Container Apps deployment instructio
 
 ## Troubleshooting
 
-### Ollama Connection Issues
+### Ollama Cloud Connection Issues
 ```bash
-# Check if Ollama is running
-curl http://localhost:11434/api/tags
+# Check if Ollama Cloud API is accessible
+curl -H "Authorization: Bearer YOUR_API_KEY" https://ollama.com/api/version
 
-# Restart Ollama service
-ollama serve
+# Test model inference
+curl -X POST https://ollama.com/api/generate \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "qwen3.5:397b", "prompt": "Hello", "stream": false}'
 ```
 
-### Model Not Found
-```bash
-# List available models
-ollama list
-
-# Pull Qwen3 8B if missing
-ollama pull qwen3:8b
-```
+### API Key Issues
+- Ensure `OLLAMA_API_KEY` environment variable is set
+- Verify API key is valid and has credits
+- Check API key format (should start with appropriate prefix)
 
 ### PDF Parsing Issues
 - Ensure documents are not encrypted

@@ -115,7 +115,7 @@ properties:
         memory: 56Gi
       env:
       - name: OLLAMA_MODEL_NAME
-        value: "qwen3:8b"
+        value: "qwen3.5:397b"
       - name: OLLAMA_BASE_URL
         value: "http://localhost:11434"
       - name: OLLAMA_HOST
@@ -197,7 +197,7 @@ echo "Next steps:"
 echo "1. Monitor logs to see if model is reused:"
 echo "   az containerapp logs show -n $ACA_NAME -g $RESOURCE_GROUP --follow"
 echo ""
-echo "2. Look for: '✓ Model qwen3:8b already exists'"
+echo "2. Look for: '✓ Model qwen3.5:397b already exists'"
 echo ""
 echo "3. Access the file share in Azure Portal to verify model files:"
 echo "   Storage Account: $STORAGE_ACCOUNT_NAME"

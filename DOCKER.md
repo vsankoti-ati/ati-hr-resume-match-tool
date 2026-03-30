@@ -5,8 +5,8 @@ This guide covers running the HR Resume Match Tool using Docker and Docker Compo
 ## Prerequisites
 
 - Docker Desktop (or Docker Engine + Docker Compose)
-- 10GB+ free disk space (for Qwen3 8B model)
-- 8GB+ RAM (recommended for qwen3:8b)
+- 10GB+ free disk space (for Qwen3.5 9B model)
+- 8GB+ RAM (recommended for qwen3.5:397b)
 
 ## Quick Start
 
@@ -52,7 +52,7 @@ The Docker setup now uses a **single combined container** for simplified deploym
   - `ollama-models` (persistent model storage)
   - `results` (generated reports)
 - **Services**: Runs both Ollama and Streamlit in one container
-- **Model**: qwen3:8b (~5GB, 8B parameters)
+- **Model**: qwen3.5:397b (~5GB, 8B parameters)
 - **Benefits**: 
   - Simpler architecture (no network overhead)
   - Easier Azure Container Apps deployment
@@ -162,7 +162,7 @@ curl http://localhost:8501/_stcore/health
 docker-compose logs hr-resume-app
 
 # Manually pull model
-docker-compose exec hr-resume-app ollama pull qwen3:8b
+docker-compose exec hr-resume-app ollama pull qwen3.5:397b
 ```
 
 ### Connection Issues
@@ -211,7 +211,7 @@ Configure in `docker-compose.yaml` or `.env`:
 environment:
   - OLLAMA_BASE_URL=http://localhost:11434      # Use localhost in combined container
   - OLLAMA_HOST=0.0.0.0:11434                   # Ollama bind address
-  - OLLAMA_MODEL_NAME=qwen3:8b                   # Can change to other models
+  - OLLAMA_MODEL_NAME=qwen3.5:397b                   # Can change to other models
   - OLLAMA_TIMEOUT=600
   - STREAMLIT_SERVER_PORT=8501
   - MAX_UPLOAD_SIZE_MB=200
@@ -249,7 +249,7 @@ services:
 Use smaller quantized models for lower memory:
 ```bash
 # Instead of 32B, use smaller models
-OLLAMA_MODEL_NAME=qwen3:8b         # ~5GB (recommended)
+OLLAMA_MODEL_NAME=qwen3.5:397b         # ~5GB (recommended)
 OLLAMA_MODEL_NAME=llama3.2:3b      # ~2GB (smaller/faster)
 ```
 

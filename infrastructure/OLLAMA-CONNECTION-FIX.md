@@ -115,7 +115,7 @@ In Azure Portal under Container App > Environment variables:
 |----------|---------------|---------|
 | `OLLAMA_HOST` | `0.0.0.0:11434` | Bind to all interfaces |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Streamlit connects here |
-| `OLLAMA_MODEL_NAME` | `qwen3:8b` | Model to use |
+| `OLLAMA_MODEL_NAME` | `qwen3.5:397b` | Model to use |
 | `OLLAMA_TIMEOUT` | `600` or higher | Request timeout seconds |
 
 ## Testing Connection Manually
@@ -128,7 +128,7 @@ curl http://localhost:11434/api/tags
 
 # Test model inference
 curl http://localhost:11434/api/generate -d '{
-  "model": "qwen3:8b",
+  "model": "qwen3.5:397b",
   "prompt": "Hello",
   "stream": false
 }'

@@ -12,8 +12,9 @@ class Config:
     """Application configuration class"""
     
     # Ollama Configuration
-    OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
-    OLLAMA_MODEL_NAME = os.getenv('OLLAMA_MODEL_NAME', 'qwen3:8b')
+    OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'https://ollama.com/api')
+    OLLAMA_API_KEY = os.getenv('OLLAMA_API_KEY', '')
+    OLLAMA_MODEL_NAME = os.getenv('OLLAMA_MODEL_NAME', 'qwen3.5:397b')
     OLLAMA_TIMEOUT = int(os.getenv('OLLAMA_TIMEOUT', '600'))  # 10 minutes default
     
     # Streamlit Configuration
@@ -25,8 +26,9 @@ class Config:
     MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024
     ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.doc']
     
-    # Report Configuration
-    REPORT_OUTPUT_DIR = os.getenv('REPORT_OUTPUT_DIR', '/app/results')
+    # PII Masking Configuration
+    ENABLE_PII_MASKING = os.getenv('ENABLE_PII_MASKING', 'true').lower() == 'true'
+    PII_MASKING_METHOD = os.getenv('PII_MASKING_METHOD', 'presidio')  # 'presidio' or 'regex'
     REPORT_TITLE = "HR Resume Match Analysis Report"
     REPORT_AUTHOR = "ATI HR Resume Match Tool"
     

@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # Combined HR Resume Matcher with Ollama + Python App
+  # HR Resume Matcher (Python App using Ollama Cloud)
   hr-resume-app:
     build:
       context: .
@@ -9,10 +9,7 @@ services:
     container_name: hr-resume-matcher
     ports:
       - "8501:8501"    # Streamlit UI
-      - "11434:11434"  # Ollama API
     volumes:
-      # Mount local directory for persistent model storage
-      - ./ollama-models:/root/.ollama
       # Application code for development (hot reload)
       - ./app:/resume-match-tool/app
       - ./utils:/resume-match-tool/utils
@@ -20,9 +17,9 @@ services:
       # Output directory for generated reports
       - ./results:/resume-match-tool/results
     environment:
-      - OLLAMA_BASE_URL=http://localhost:11434
-      - OLLAMA_HOST=0.0.0.0:11434
-      - OLLAMA_MODEL_NAME=qwen3:8b
+      - OLLAMA_BASE_URL=https://ollama.com/api
+      - OLLAMA_API_KEY=${OLLAMA_API_KEY}
+      - OLLAMA_MODEL_NAME=qwen3.5:397b
       - STREAMLIT_SERVER_PORT=8501
       - STREAMLIT_SERVER_ADDRESS=0.0.0.0
       - REPORT_OUTPUT_DIR=/resume-match-tool/results
@@ -35,8 +32,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 16G
+          memory: 4G
         reservations:
-          memory: 6G
+          memory: 1G
     restart: unless-stopped
 

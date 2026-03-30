@@ -251,7 +251,8 @@ def main():
         return  # require_authentication will handle rendering login page
     
     # Check Ollama health (blocking check on startup)
-    is_healthy, health_message, health_details = check_ollama_health()
+    with st.spinner("🔍 Checking AI service status..."):
+        is_healthy, health_message, health_details = check_ollama_health()
     
     if not is_healthy:
         st.error(f"**🔧 AI Service Status:** {health_message}")
@@ -358,7 +359,7 @@ def main():
                 with st.expander("📦 Loaded Models"):
                     for model in model_info.get('models', []):
                         st.text(f"• {model['name']}")
-                        st.caption(f"  Size: {model['size_gb']:.2f} GB")
+                        #st.caption(f"  Size: {model['size_gb']:.2f} GB")
         else:
             st.error(health_msg)
             
@@ -448,29 +449,32 @@ def main():
             
             try:
                 # Step 1: Initialize engine
-                status_text.text("Initializing analysis engine...")
-                progress_bar.progress(10)
-                engine = get_matching_engine()
+                with st.spinner("🔧 Initializing analysis engine..."):
+                    status_text.text("Initializing analysis engine...")
+                    progress_bar.progress(10)
+                    engine = get_matching_engine()
                 
                 # Step 2: Check system health
-                status_text.text("Checking system health...")
-                progress_bar.progress(20)
-                is_healthy, msg = engine.check_system_health()
-                if not is_healthy:
-                    st.error(f"System health check failed: {msg}")
-                    st.stop()
+                with st.spinner("💚 Checking system health..."):
+                    status_text.text("Checking system health...")
+                    progress_bar.progress(20)
+                    is_healthy, msg = engine.check_system_health()
+                    if not is_healthy:
+                        st.error(f"System health check failed: {msg}")
+                        st.stop()
                 
                 # Step 3: Read files
-                status_text.text("Reading uploaded files...")
-                progress_bar.progress(30)
-                profile_bytes = profile_file.read()
-                jd_bytes = jd_file.read()
+                with st.spinner("📄 Reading uploaded files..."):
+                    status_text.text("Reading uploaded files...")
+                    progress_bar.progress(30)
+                    profile_bytes = profile_file.read()
+                    jd_bytes = jd_file.read()
                 
                 # Step 4: Process match request
                 status_text.text("Parsing documents and analyzing match...")
                 progress_bar.progress(40)
                 
-                with st.spinner("This may take 30-60 seconds depending on document size..."):
+                with st.spinner("🤖 AI analyzing documents... This may take 30-60 seconds depending on document size..."):
                     analysis_result, error = engine.process_match_request(
                         profile_bytes, profile_file.name,
                         jd_bytes, jd_file.name
@@ -481,13 +485,14 @@ def main():
                     st.stop()
                 
                 # Step 5: Save results
-                status_text.text("Analysis complete! Preparing results...")
-                progress_bar.progress(100)
-                
-                st.session_state.analysis_result = analysis_result
-                st.session_state.analysis_complete = True
-                st.session_state.profile_filename = profile_file.name
-                st.session_state.jd_filename = jd_file.name
+                with st.spinner("✨ Finalizing results..."):
+                    status_text.text("Analysis complete! Preparing results...")
+                    progress_bar.progress(100)
+                    
+                    st.session_state.analysis_result = analysis_result
+                    st.session_state.analysis_complete = True
+                    st.session_state.profile_filename = profile_file.name
+                    st.session_state.jd_filename = jd_file.name
                 
                 st.success("✅ Analysis completed successfully!")
                 st.balloons()
@@ -549,7 +554,7 @@ def main():
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             if st.button("📄 Download PDF Report", type="primary", use_container_width=True):
-                with st.spinner("Generating PDF report..."):
+                with st.spinner("📝 Generating PDF report..."):
                     try:
                         pdf_bytes = generate_pdf_report(result)
                         

@@ -27,13 +27,14 @@ def require_authentication() -> bool:
     # If authentication is disabled, auto-authenticate with mock service
     if not AuthConfig.is_auth_enabled():
         if not st.session_state.get('authenticated', False):
-            logger.info("Authentication disabled - performing mock authentication")
-            mock_service = get_mock_auth_service()
-            auth_data = mock_service.auto_authenticate()
-            
-            # Store authentication data in session state
-            for key, value in auth_data.items():
-                st.session_state[key] = value
+            with st.spinner("🔄 Initializing session..."):
+                logger.info("Authentication disabled - performing mock authentication")
+                mock_service = get_mock_auth_service()
+                auth_data = mock_service.auto_authenticate()
+                
+                # Store authentication data in session state
+                for key, value in auth_data.items():
+                    st.session_state[key] = value
         
         return True
     
@@ -50,14 +51,15 @@ def require_authentication() -> bool:
     # Check if token has expired
     token_expiry = st.session_state.get('token_expiry')
     if token_expiry:
-        auth_service = get_auth_service()
-        if auth_service.is_token_expired(token_expiry):
-            logger.warning("Token has expired - requiring re-authentication")
-            logout()
-            st.warning("Your session has expired. Please sign in again.")
-            render_login_page()
-            st.stop()
-            return False
+        with st.spinner("🔐 Validating session..."):
+            auth_service = get_auth_service()
+            if auth_service.is_token_expired(token_expiry):
+                logger.warning("Token has expired - requiring re-authentication")
+                logout()
+                st.warning("Your session has expired. Please sign in again.")
+                render_login_page()
+                st.stop()
+                return False
     
     logger.info(f"User authenticated: {st.session_state.get('user_email', 'unknown')}")
     return True

@@ -8,7 +8,7 @@
         },
         {
           "name": "OLLAMA_MODEL_NAME",
-          "value": "qwen3:8b"
+          "value": "qwen3.5:397b"
         },
         {
           "name": "OLLAMA_TIMEOUT",

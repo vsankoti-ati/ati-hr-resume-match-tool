@@ -6,6 +6,7 @@ import logging
 from typing import Dict, Any, Optional, Tuple
 from utils.document_parser import DocumentParser
 from utils.ollama_client import OllamaClient
+from utils.pii_masker import mask_pii_in_text
 from config.config import Config
 
 # Configure logging
@@ -103,15 +104,55 @@ class MatchingEngine:
         logger.info("Starting match analysis...")
         
         try:
-            # Perform analysis using Ollama
+            # Mask PII in profile and job description text before sending to Ollama Cloud
+            masked_profile_text = profile_text
+            masked_jd_text = jd_text
+            profile_pii_stats = {}
+            jd_pii_stats = {}
+            total_pii_masked = 0
+            
+            if Config.ENABLE_PII_MASKING:
+                logger.info("PII masking enabled - masking sensitive data before analysis...")
+                
+                # Mask PII in profile text
+                masked_profile_text, profile_pii_stats = mask_pii_in_text(
+                    profile_text, 
+                    method=Config.PII_MASKING_METHOD
+                )
+                
+                # Mask PII in job description text
+                masked_jd_text, jd_pii_stats = mask_pii_in_text(
+                    jd_text, 
+                    method=Config.PII_MASKING_METHOD
+                )
+                
+                total_pii_masked = sum(profile_pii_stats.values()) + sum(jd_pii_stats.values())
+                
+                if total_pii_masked > 0:
+                    logger.info(f"Total PII instances masked: {total_pii_masked} ({profile_pii_stats}, {jd_pii_stats})")
+                else:
+                    logger.info("No PII detected in documents")
+            else:
+                logger.info("PII masking disabled - proceeding with original text")
+            
+            # Perform analysis using Ollama with masked text
             analysis_result = self.ollama_client.analyze_resume(
-                profile_text=profile_text,
-                job_description_text=jd_text,
+                profile_text=masked_profile_text,
+                job_description_text=masked_jd_text,
                 stream=stream
             )
             
             if not analysis_result:
                 return None, "Failed to get analysis from Ollama"
+            
+            # Add PII masking information to the result for transparency
+            analysis_result['_pii_masking'] = {
+                'enabled': Config.ENABLE_PII_MASKING,
+                'method': Config.PII_MASKING_METHOD if Config.ENABLE_PII_MASKING else None,
+                'profile_pii_stats': profile_pii_stats,
+                'jd_pii_stats': jd_pii_stats,
+                'total_masked': total_pii_masked
+            }
             
             # Validate analysis result structure
             required_fields = [

@@ -121,23 +121,22 @@ az containerapp update \
     --min-replicas 1 \
     --max-replicas 1 \
     --set-env-vars \
-        OLLAMA_MODEL_NAME="qwen3:8b" \
+        OLLAMA_BASE_URL="https://ollama.com/api" \
+        OLLAMA_API_KEY="${OLLAMA_API_KEY}" \
+        OLLAMA_MODEL_NAME="qwen3.5:397b" \
         STREAMLIT_SERVER_PORT="8501" \
-        STREAMLIT_SERVER_ADDRESS="0.0.0.0" \
-        OLLAMA_HOST="0.0.0.0:11434" \
-        OLLAMA_BASE_URL="http://localhost:11434"
+        STREAMLIT_SERVER_ADDRESS="0.0.0.0"
 ```
 
 ## After Making Changes
 
-1. **Wait 30 minutes** for the first startup (model download)
+1. **Wait 2-5 minutes** for the application to start (no model download needed)
 2. **Monitor logs** continuously:
    ```bash
    az containerapp logs show -n $ACA_NAME -g $RESOURCE_GROUP --follow
    ```
 3. **Look for these log messages**:
-   - "✓ Ollama service is ready!"
-   - "✓ Model qwen3:8b already exists" or "✓ Model qwen3:8b downloaded successfully!"
+   - "✓ Ollama Cloud API connection successful!"
    - "Starting Streamlit application..."
    - "You can now view your Streamlit app in your browser."
 

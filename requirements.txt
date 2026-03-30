@@ -14,6 +14,9 @@ pypdf==4.1.0
 reportlab==4.1.0
 weasyprint==60.2
 
+# PII Detection and Masking (lightweight approach)
+regex==2023.12.25
+
 # Utilities
 python-dotenv==1.0.1
 Pillow==10.2.0
