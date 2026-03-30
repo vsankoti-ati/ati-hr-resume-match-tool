@@ -1,0 +1,6 @@
+Make the following changes in the report: 
+1. In the recommendation section, it is currently giving recommendation to the candidate, this tool is used by HR to validate if the profile matches the job description. So, the recommendation should be from HR perspective whether to consider the candidate for evaluation(interview process) for the role or not. Make changes accordingly.
+2. Under Interview Pre, provide few technical and behavioral questions that can bconsidered for the evalae asked to the candidate if the recommendation is to consider him for evaluation.
+3. The report is good, but is elobarate in terms of pages. Please restructure so that it is more readable. For example, Matching Skills & qualifications can be restructured to be a tabular format with Technical Skills, Soft Skills, Qualifications and Experience Areas as columns in a table.
+4. On a similar note, Detailed Match Analysis can be restructure to invert rows to columns so that all of them is visible in one table. 
+5. Make similar changes to sections - 'Skills & Qualifications Gaps' and 'Profile Strengths & Highlights'

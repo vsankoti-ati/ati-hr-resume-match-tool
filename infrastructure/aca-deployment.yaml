@@ -1,0 +1,61 @@
+properties:
+  workloadProfileName: Consumption-GPU-NC8as-T4
+  configuration:
+    ingress:
+      external: true
+      targetPort: 8501
+      transport: http
+      allowInsecure: false
+    registries:
+      - server: atiproductpocs.azurecr.io
+        username: atiproductpocs
+    # Note: Set identity or passwordSecretRef for authentication
+  template:
+    containers:
+      - name: ati-hr-resume-matcher
+        image: atiproductpocs.azurecr.io/ati-hr-resume-matcher:1.2
+        resources:
+          cpu: 8.0
+          memory: 56Gi
+        env:
+          - name: OLLAMA_MODEL_NAME
+            value: "qwen3:8b"
+          - name: STREAMLIT_SERVER_PORT
+            value: "8501"
+          - name: NVIDIA_VISIBLE_DEVICES
+            value: "all"
+          - name: NVIDIA_DRIVER_CAPABILITIES
+            value: "compute,utility"
+        probes:
+          # Liveness probe - checks if container is still running
+          - type: liveness
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          
+          # Readiness probe - checks if app is ready to serve traffic
+          - type: readiness
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          # Startup probe - gives app up to 30 minutes for initial model download
+          - type: startup
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 60  # 30s * 60 = 30 minutes max startup time
+    scale:
+      minReplicas: 1
+      maxReplicas: 1

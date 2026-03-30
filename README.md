@@ -1,0 +1,264 @@
+# ATI HR Resume Match Tool
+
+AI-powered resume matching tool that analyzes candidate profiles against job descriptions using Ollama and Qwen3 8B model.
+
+## Features
+
+- 📊 **Overall Match Scoring**: Get an instant percentage match between profile and job description
+- 🎯 **Detailed Skill Analysis**: Breakdown of matching technical skills, soft skills, qualifications, and experience
+- ⚠️ **Gap Identification**: Identify missing skills with suggestions for acquisition
+- 💪 **Strength Highlighting**: Discover unique strengths and how to emphasize them
+- 🚨 **Anomaly Detection**: Flag discrepancies in dates, titles, or qualifications
+- 📄 **PDF Export**: Generate professional PDF reports
+- 🎨 **Modern UI**: Clean, intuitive Streamlit interface
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.11+
+- Ollama installed and running
+- Qwen3 8B model pulled in Ollama
+
+### Installation
+
+1. **Clone the repository** (or navigate to project directory)
+```bash
+cd ati-hr-resume-match-tool
+```
+
+2. **Install dependencies**
+```bash
+pip install -r requirements.txt
+```
+
+3. **Set up Ollama**
+```bash
+# Install Ollama (if not already installed)
+# Visit: https://ollama.ai
+
+# Pull the Qwen3 8B model
+ollama pull qwen3:8b
+
+# Start Ollama service
+ollama serve
+```
+
+4. **Configure environment** (optional)
+```bash
+cp .env.template .env
+# Edit .env with your settings if needed
+```
+
+5. **Run the application**
+```bash
+streamlit run app/main.py
+```
+
+6. **Open browser**
+Navigate to `http://localhost:8501`
+
+## Usage
+
+1. **Upload Documents**
+   - Upload candidate profile (PDF or Word)
+   - Upload job description (PDF or Word)
+
+2. **Analyze**
+   - Click "Analyze Match" button
+   - Wait 30-60 seconds for AI analysis
+
+3. **Review Results**
+   - Switch to "Results" tab
+   - View detailed match analysis
+   - Export PDF report if needed
+
+## Project Structure
+
+```
+ati-hr-resume-match-tool/
+├── app/
+│   ├── main.py              # Streamlit UI
+│   └── matcher.py           # Matching engine
+├── utils/
+│   ├── document_parser.py   # PDF/Word parsing
+│   ├── ollama_client.py     # Ollama API client
+│   └── report_generator.py  # PDF generation
+├── config/
+│   └── config.py            # Configuration
+├── requirements.txt         # Dependencies
+└── .env.template           # Environment template
+```
+
+## Configuration
+
+Environment variables (in `.env`):
+
+```bash
+# Ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL_NAME=qwen3:8b
+OLLAMA_TIMEOUT=600
+
+# Streamlit
+STREAMLIT_SERVER_PORT=8501
+STREAMLIT_SERVER_ADDRESS=0.0.0.0
+
+# File Upload
+MAX_UPLOAD_SIZE_MB=200
+
+# Azure AD Authentication
+ENABLE_AUTH=false  # Set to true for production
+AZURE_AD_TENANT_ID=your-tenant-id-here
+AZURE_AD_CLIENT_ID=your-client-id-here
+AZURE_AD_CLIENT_SECRET=your-client-secret-here
+AZURE_AD_REDIRECT_URI=http://localhost:8501
+```
+
+## Azure AD Authentication Setup
+
+The application supports Azure AD authentication for enterprise deployments. For local development, authentication can be disabled using mock authentication.
+
+### Local Development (No Azure AD Required)
+
+Set `ENABLE_AUTH=false` in your `.env` file:
+```bash
+ENABLE_AUTH=false
+```
+
+The application will automatically authenticate you as `dev@example.com` with admin role. No login page will be shown.
+
+### Production Setup (Azure AD)
+
+#### Step 1: Register Application in Azure AD
+
+1. Navigate to [Azure Portal](https://portal.azure.com)
+2. Go to **Azure Active Directory** → **App registrations**
+3. Click **New registration**
+4. Configure the app:
+   - **Name**: `ATI HR Resume Match Tool`
+   - **Supported account types**: Select appropriate option (e.g., "Accounts in this organizational directory only")
+   - **Redirect URI**: Select "Web" and enter:
+     - For local: `http://localhost:8501`
+     - For Azure Container Apps: `https://your-app-name.azurecontainerapps.io`
+5. Click **Register**
+
+#### Step 2: Configure Client Secret
+
+1. In your app registration, go to **Certificates & secrets**
+2. Click **New client secret**
+3. Add a description (e.g., "HR Tool Production")
+4. Select expiration period (recommended: 6 months or 1 year)
+5. Click **Add**
+6. **IMPORTANT**: Copy the secret value immediately (it won't be shown again)
+
+#### Step 3: Configure API Permissions
+
+1. In your app registration, go to **API permissions**
+2. Verify that **User.Read** (Microsoft Graph) is present (added by default)
+3. Click **Grant admin consent** if required by your organization
+
+#### Step 4: Update Environment Variables
+
+Update your `.env` file with the values from Azure AD:
+
+```bash
+ENABLE_AUTH=true
+AZURE_AD_TENANT_ID=<your-tenant-id>       # From "Overview" → "Directory (tenant) ID"
+AZURE_AD_CLIENT_ID=<your-client-id>       # From "Overview" → "Application (client) ID"
+AZURE_AD_CLIENT_SECRET=<your-secret>      # From "Certificates & secrets"
+AZURE_AD_REDIRECT_URI=http://localhost:8501
+```
+
+#### Step 5: Test Authentication
+
+1. Start the application: `streamlit run app/main.py`
+2. Navigate to `http://localhost:8501`
+3. You should see the login page with "Sign in with Microsoft" button
+4. Click the button to authenticate with your Azure AD account
+5. After successful login, you'll be redirected to the main application
+6. Your name and email will appear in the sidebar with a "Sign Out" button
+
+### Security Best Practices
+
+- **Never commit** `.env` file or client secrets to version control
+- **Rotate client secrets** every 6-12 months
+- Use **Azure Key Vault** for production secret storage
+- Configure **Conditional Access policies** in Azure AD for additional security
+- Review **sign-in logs** in Azure AD regularly
+- Use **different app registrations** for dev, staging, and production
+
+### Troubleshooting Authentication
+
+#### "Login failed" Error
+- Verify `AZURE_AD_TENANT_ID`, `AZURE_AD_CLIENT_ID`, and `AZURE_AD_CLIENT_SECRET` are correct
+- Check that the redirect URI in Azure AD matches your `.env` setting exactly
+- Ensure client secret has not expired
+
+#### "Invalid redirect URI" Error
+- The redirect URI must be registered in Azure AD app registration
+- For local: `http://localhost:8501` (no trailing slash)
+- For Azure: `https://your-app-name.azurecontainerapps.io`
+
+#### Session Expires Immediately
+- Check system clock is synchronized
+- Verify JWT token is not being blocked by network policies
+- Review browser console for errors
+
+#### Mock Authentication Not Working
+- Verify `ENABLE_AUTH=false` (not "False" or "0")
+- Check that `config/auth_config.py` is present
+- Restart the application after changing `.env`
+
+## Docker Deployment
+
+See [plan.md](plan.md) for Docker and Azure Container Apps deployment instructions.
+
+## Troubleshooting
+
+### Ollama Connection Issues
+```bash
+# Check if Ollama is running
+curl http://localhost:11434/api/tags
+
+# Restart Ollama service
+ollama serve
+```
+
+### Model Not Found
+```bash
+# List available models
+ollama list
+
+# Pull Qwen3 8B if missing
+ollama pull qwen3:8b
+```
+
+### PDF Parsing Issues
+- Ensure documents are not encrypted
+- Try different PDF formats if parsing fails
+- Check document has actual text (not scanned images)
+
+## Development Status
+
+- ✅ Phase 1: Python Application (Complete)
+- 🔄 Phase 2: Docker Configuration (Pending)
+- 🔄 Phase 3: Azure ARM Templates (Pending)
+- 🔄 Phase 4: CI/CD Setup (Pending)
+
+See [progress.md](progress.md) for detailed implementation status.
+
+## Requirements
+
+- Python 3.11+
+- Ollama with Qwen3 8B model
+- 4GB+ RAM (for model inference)
+- Modern web browser
+
+## License
+
+Copyright © 2026 ATI
+
+## Support
+
+For issues or questions, please refer to [plan.md](plan.md) for detailed documentation.

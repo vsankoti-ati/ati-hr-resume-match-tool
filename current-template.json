@@ -1,0 +1,104 @@
+{
+  "containers": [
+    {
+      "env": [
+        {
+          "name": "OLLAMA_BASE_URL",
+          "value": "http://localhost:11434"
+        },
+        {
+          "name": "OLLAMA_MODEL_NAME",
+          "value": "qwen3:8b"
+        },
+        {
+          "name": "OLLAMA_TIMEOUT",
+          "value": "600"
+        },
+        {
+          "name": "STREAMLIT_SERVER_PORT",
+          "value": "8501"
+        },
+        {
+          "name": "STREAMLIT_SERVER_ADDRESS",
+          "value": "0.0.0.0"
+        },
+        {
+          "name": "MAX_UPLOAD_SIZE_MB",
+          "value": "200"
+        },
+        {
+          "name": "REPORT_OUTPUT_DIR",
+          "value": "/app/results"
+        },
+        {
+          "name": "ENABLE_AUTH",
+          "value": "true"
+        },
+        {
+          "name": "AZURE_AD_TENANT_ID",
+          "value": "7b86ac70-4bbf-4cca-bed2-350e38bf41bd"
+        },
+        {
+          "name": "AZURE_AD_CLIENT_ID",
+          "value": "359eccc0-1670-4210-9bc7-195680c8921d"
+        },
+        {
+          "name": "AZURE_AD_CLIENT_SECRET",
+          "value": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+        },
+        {
+          "name": "AZURE_AD_REDIRECT_URI",
+          "value": "https://ati-hr-resume-matcher.icysea-96f1bb84.westus2.azurecontainerapps.io"
+        },
+        {
+          "name": "AZURE_SUBSCRIPTION_ID",
+          "value": "your-subscription-id"
+        },
+        {
+          "name": "AZURE_RESOURCE_GROUP",
+          "value": "your-resource-group"
+        },
+        {
+          "name": "CONTAINER_REGISTRY_NAME",
+          "value": "your-acr-name"
+        }
+      ],
+      "image": "atiproductpocs.azurecr.io/ati-hr-resume-matcher:1.8",
+      "imageType": "ContainerImage",
+      "name": "ati-hr-resume-matcher-1-8",
+      "probes": [],
+      "resources": {
+        "cpu": 8,
+        "ephemeralStorage": "",
+        "memory": "56Gi"
+      }
+    }
+  ],
+  "customMetricsSettings": null,
+  "initContainers": null,
+  "revisionSuffix": "",
+  "scale": {
+    "cooldownPeriod": 300,
+    "maxReplicas": 1,
+    "minReplicas": 1,
+    "pollingInterval": 30,
+    "rules": [
+      {
+        "http": {
+          "metadata": {
+            "concurrentRequests": "10"
+          }
+        },
+        "name": "http-scaler"
+      }
+    ]
+  },
+  "serviceBinds": null,
+  "terminationGracePeriodSeconds": null,
+  "volumes": [
+    {
+      "name": "ollama-models",
+      "storageType": "EmptyDir"
+    }
+  ]
+}

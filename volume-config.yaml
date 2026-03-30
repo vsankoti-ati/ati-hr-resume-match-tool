@@ -1,0 +1,70 @@
+properties:
+  configuration:
+    ingress:
+      external: true
+      targetPort: 8501
+      transport: auto
+      traffic:
+      - weight: 100
+        latestRevision: true
+  template:
+    containers:
+    - name: ati-hr-resume-matcher
+      image: atiproductpocs.azurecr.io/ati-hr-resume-matcher:1.8
+      resources:
+        cpu: 8.0
+        memory: 56Gi
+      env:
+      - name: OLLAMA_MODEL_NAME
+        value: qwen3:8b
+      - name: OLLAMA_BASE_URL
+        value: http://localhost:11434
+      - name: OLLAMA_HOST
+        value: 0.0.0.0:11434
+      - name: OLLAMA_TIMEOUT
+        value: "1200"
+      - name: AZURE_AD_REDIRECT_URI
+        value: https://ati-hr-resume-matcher.icysea-96f1bb84.westus2.azurecontainerapps.io
+      - name: AZURE_AD_TENANT_ID
+        value: 7b86ac70-4bbf-4cca-bed2-350e38bf41bd
+      - name: AZURE_AD_CLIENT_ID
+        value: 359eccc0-1670-4210-9bc7-195680c8921d
+      - name: AZURE_AD_CLIENT_SECRET
+        value: xxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      - name: ENABLE_AUTH
+        value: "true"
+      volumeMounts:
+      - volumeName: ollama-volume
+        mountPath: /root/.ollama
+      probes:
+      - type: Startup
+        httpGet:
+          path: /
+          port: 8501
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        failureThreshold: 60
+        timeoutSeconds: 5
+      - type: Liveness
+        httpGet:
+          path: /
+          port: 8501
+        initialDelaySeconds: 60
+        periodSeconds: 30
+        failureThreshold: 3
+        timeoutSeconds: 5
+      - type: Readiness
+        httpGet:
+          path: /
+          port: 8501
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        failureThreshold: 3
+        timeoutSeconds: 5
+    volumes:
+    - name: ollama-volume
+      storageType: AzureFile
+      storageName: ollama-storage
+    scale:
+      minReplicas: 1
+      maxReplicas: 1

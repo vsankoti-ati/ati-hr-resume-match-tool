@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # Combined HR Resume Matcher with Ollama + Python App
+  hr-resume-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hr-resume-matcher
+    ports:
+      - "8501:8501"    # Streamlit UI
+      - "11434:11434"  # Ollama API
+    volumes:
+      # Mount local directory for persistent model storage
+      - ./ollama-models:/root/.ollama
+      # Application code for development (hot reload)
+      - ./app:/resume-match-tool/app
+      - ./utils:/resume-match-tool/utils
+      - ./config:/resume-match-tool/config
+      # Output directory for generated reports
+      - ./results:/resume-match-tool/results
+    environment:
+      - OLLAMA_BASE_URL=http://localhost:11434
+      - OLLAMA_HOST=0.0.0.0:11434
+      - OLLAMA_MODEL_NAME=qwen3:8b
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+      - REPORT_OUTPUT_DIR=/resume-match-tool/results
+      # Azure AD Authentication (set ENABLE_AUTH=false for local dev)
+      - ENABLE_AUTH=true
+      - AZURE_AD_TENANT_ID=7b86ac70-4bbf-4cca-bed2-350e38bf41bd
+      - AZURE_AD_CLIENT_ID=359eccc0-1670-4210-9bc7-195680c8921d
+      - AZURE_AD_CLIENT_SECRET=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      - AZURE_AD_REDIRECT_URI=${AZURE_AD_REDIRECT_URI:-http://localhost:8501}
+    deploy:
+      resources:
+        limits:
+          memory: 16G
+        reservations:
+          memory: 6G
+    restart: unless-stopped
+
