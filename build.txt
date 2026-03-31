@@ -1,30 +1,11 @@
 az login
-az acr login --name atiproductpocs
+az acr login --name atiproductsregistry
+
+atiproductsregistry.azurecr.io
 
 docker build --platform linux/amd64 -t ati-hr-resume-matcher .
 
-docker tag ati-hr-resume-matcher atiproductpocs.azurecr.io/ati-hr-resume-matcher:1.5
+docker tag ati-hr-resume-matcher atiproductsregistry.azurecr.io/ati-hr-resume-matcher:1.1
 
-docker push atiproductpocs.azurecr.io/ati-hr-resume-matcher:1.5
-
-
-
-# Build with GPU support
-docker build --platform linux/amd64 -t ati-hr-resume-matcher:gpu .
-
-# Push to ACR
-az acr login --name atiproductpocs
-docker tag ati-hr-resume-matcher:gpu atiproductpocs.azurecr.io/ati-hr-resume-matcher:gpu_1.3
-docker push atiproductpocs.azurecr.io/ati-hr-resume-matcher:gpu_1.3
-
-# Deploy with GPU workload profile
-az containerapp update \
-    --name ati-hr-resume-matcher \
-    --resource-group ati-products-pocs \
-    --image atiproductpocs.azurecr.io/ati-hr-resume-matcher:gpu_1.3 \
-    --cpu 8.0 \
-    --memory 56Gi \
-    --workload-profile-name Consumption-GPU-NC8as-T4
-    --min-replicas 1
-    --max-replicas 1
+docker push atiproductsregistry.azurecr.io/ati-hr-resume-matcher:1.1
 
