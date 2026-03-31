@@ -29,20 +29,50 @@ class OllamaClient:
         Args:
             base_url: Base URL for Ollama API (default from config)
             model_name: Name of the model to use (default from config)
-            api_key: API key for authentication (default from config)
+            api_key: API key for authentication (default from config, not needed for local)
             timeout: Request timeout in seconds (default from config)
         """
         self.base_url = (base_url or Config.OLLAMA_BASE_URL).rstrip('/')
         self.model_name = model_name or Config.OLLAMA_MODEL_NAME
-        self.api_key = api_key or Config.OLLAMA_API_KEY
         self.timeout = timeout or Config.OLLAMA_TIMEOUT
         
-        # Set up headers for authentication
+        # Check if running in cloud mode
+        self.is_cloud_mode = Config.CLOUD_RUN
+        self.is_local = not self.is_cloud_mode
+        
+        # API key is only needed for cloud mode
+        if self.is_cloud_mode:
+            self.api_key = api_key or Config.OLLAMA_API_KEY
+            if not self.api_key:
+                logger.warning("CLOUD_RUN=true but no API key provided!")
+            logger.info(f"🌐 CLOUD MODE: Using remote Ollama server: {self.base_url}")
+        else:
+            self.api_key = None
+            logger.info(f"💻 LOCAL MODE: Using local Ollama server: {self.base_url}")
+        
+        # Set up headers for authentication (only for cloud mode)
         self.headers = {}
         if self.api_key:
             self.headers['Authorization'] = f'Bearer {self.api_key}'
         
-        logger.info(f"Initialized Ollama client: {self.base_url}, model: {self.model_name}")
+        logger.info(f"Model: {self.model_name}, Timeout: {self.timeout}s")
+    
+    def _get_endpoint(self, path: str) -> str:
+        """
+        Get the correct endpoint path based on local vs cloud mode
+        
+        Args:
+            path: Endpoint path (e.g., 'tags', 'generate')
+        
+        Returns:
+            Full endpoint path with /api/ prefix for local Ollama
+        """
+        if self.is_local:
+            # Local Ollama uses /api/ prefix
+            return f"/api/{path}"
+        else:
+            # Cloud Ollama uses direct paths
+            return f"/{path}"
     
     def health_check(self) -> bool:
         """
@@ -52,14 +82,21 @@ class OllamaClient:
             True if service is healthy, False otherwise
         """
         try:
+            # Use /api/tags for local, /tags for cloud
+            endpoint = self._get_endpoint('tags')
             response = requests.get(
-                f"{self.base_url}/tags",
+                f"{self.base_url}{endpoint}",
                 headers=self.headers,
                 timeout=5
             )
-            return response.status_code == 200
+            is_healthy = response.status_code == 200
+            if is_healthy:
+                logger.info(f"✅ Health check passed: {self.base_url}{endpoint}")
+            else:
+                logger.error(f"❌ Health check failed: {response.status_code} - {self.base_url}{endpoint}")
+            return is_healthy
         except Exception as e:
-            logger.error(f"Ollama health check failed: {str(e)}")
+            logger.error(f"❌ Ollama health check failed: {str(e)}")
             return False
     
     def list_models(self) -> Optional[list]:
@@ -70,8 +107,9 @@ class OllamaClient:
             List of model names or None if failed
         """
         try:
+            endpoint = self._get_endpoint('tags')
             response = requests.get(
-                f"{self.base_url}/tags",
+                f"{self.base_url}{endpoint}",
                 headers=self.headers,
                 timeout=10
             )
@@ -144,8 +182,9 @@ class OllamaClient:
             
             logger.info(f"Generating with model {self.model_name}, temp={temperature}")
             
+            endpoint = self._get_endpoint('generate')
             response = requests.post(
-                f"{self.base_url}/generate",
+                f"{self.base_url}{endpoint}",
                 json=payload,
                 headers=self.headers,
                 timeout=self.timeout,
@@ -210,8 +249,9 @@ class OllamaClient:
             if system_prompt:
                 payload["system"] = system_prompt
             
+            endpoint = self._get_endpoint('generate')
             response = requests.post(
-                f"{self.base_url}/generate",
+                f"{self.base_url}{endpoint}",
                 json=payload,
                 headers=self.headers,
                 timeout=self.timeout,
@@ -302,9 +342,11 @@ class OllamaClient:
         model = model_name or self.model_name
         
         try:
+            endpoint = self._get_endpoint('show')
             response = requests.post(
-                f"{self.base_url}/show",
+                f"{self.base_url}{endpoint}",
                 json={"name": model},
+                headers=self.headers,
                 timeout=10
             )
             

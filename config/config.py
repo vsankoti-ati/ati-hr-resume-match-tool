@@ -11,11 +11,30 @@ load_dotenv()
 class Config:
     """Application configuration class"""
     
-    # Ollama Configuration
-    OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'https://ollama.com/api')
-    OLLAMA_API_KEY = os.getenv('OLLAMA_API_KEY', '')
-    OLLAMA_MODEL_NAME = os.getenv('OLLAMA_MODEL_NAME', 'qwen3.5:397b')
+    # Environment Mode
+    ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')  # 'development' or 'production'
+    DEBUG = os.getenv('DEBUG', 'true').lower() == 'true'
+    CLOUD_RUN = os.getenv('CLOUD_RUN', 'false').lower() == 'true'
+    
+    # Ollama Configuration - Auto-configured based on CLOUD_RUN
+    if CLOUD_RUN:
+        # Cloud/Remote Ollama configuration
+        OLLAMA_BASE_URL = os.getenv('OLLAMA_CLOUD_URL', 'https://ollama.com/api')
+        OLLAMA_API_KEY = os.getenv('OLLAMA_API_KEY', '')
+        OLLAMA_MODEL_NAME = os.getenv('OLLAMA_CLOUD_MODEL', 'qwen3.5:397b')
+    else:
+        # Local Ollama configuration
+        OLLAMA_BASE_URL = os.getenv('OLLAMA_LOCAL_URL', 'http://localhost:11434')
+        OLLAMA_API_KEY = ''  # No API key needed for local
+        OLLAMA_MODEL_NAME = os.getenv('OLLAMA_LOCAL_MODEL', 'qwen3:8b')
+    
     OLLAMA_TIMEOUT = int(os.getenv('OLLAMA_TIMEOUT', '600'))  # 10 minutes default
+    
+    # Auto-detect if using local Ollama server
+    @staticmethod
+    def is_local_ollama() -> bool:
+        """Check if using local Ollama server"""
+        return not Config.CLOUD_RUN
     
     # Streamlit Configuration
     STREAMLIT_SERVER_PORT = int(os.getenv('STREAMLIT_SERVER_PORT', '8501'))

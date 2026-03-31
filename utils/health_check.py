@@ -11,6 +11,25 @@ from config.config import Config
 logger = logging.getLogger(__name__)
 
 
+def _get_endpoint(path: str) -> str:
+    """
+    Get the correct endpoint path based on local vs cloud mode
+    
+    Args:
+        path: Endpoint path (e.g., 'tags', 'generate', 'version')
+    
+    Returns:
+        Full URL with correct path
+    """
+    base_url = Config.OLLAMA_BASE_URL.rstrip('/')
+    if Config.is_local_ollama():
+        # Local Ollama uses /api/ prefix
+        return f"{base_url}/api/{path}"
+    else:
+        # Cloud Ollama uses direct paths
+        return f"{base_url}/{path}"
+
+
 def test_model_inference() -> Tuple[bool, str, int]:
     """
     Test actual model inference to ensure model is loaded and ready
@@ -36,7 +55,7 @@ def test_model_inference() -> Tuple[bool, str, int]:
             headers["Authorization"] = f"Bearer {Config.OLLAMA_API_KEY}"
         
         response = requests.post(
-            f"{Config.OLLAMA_BASE_URL}/generate",
+            _get_endpoint('generate'),
             json=payload,
             headers=headers,
             timeout=30  # 30 second timeout for inference test
@@ -72,7 +91,8 @@ def test_model_inference() -> Tuple[bool, str, int]:
 
 def check_ollama_health() -> Tuple[bool, str, Dict]:
     """
-    Check Ollama Cloud API health and model availability with inference test
+    Check Ollama API health and model availability with inference test
+    Works with both local Ollama server and cloud Ollama API
     
     Returns:
         Tuple of (is_healthy, message, details)
@@ -91,15 +111,20 @@ def check_ollama_health() -> Tuple[bool, str, Dict]:
     
     start = time.time()
     
-    # Step 1: Check if Ollama Cloud API is reachable (simple ping)
+    # Step 1: Check if Ollama API is reachable
     try:
         headers = {}
         if Config.OLLAMA_API_KEY:
             headers["Authorization"] = f"Bearer {Config.OLLAMA_API_KEY}"
         
-        # Try a simple API call to check connectivity
+        # For local Ollama, use /api/tags endpoint; for cloud use /version
+        if Config.is_local_ollama():
+            check_endpoint = _get_endpoint('tags')
+        else:
+            check_endpoint = _get_endpoint('version')
+        
         response = requests.get(
-            f"{Config.OLLAMA_BASE_URL}/version",
+            check_endpoint,
             headers=headers,
             timeout=5
         )
@@ -107,9 +132,10 @@ def check_ollama_health() -> Tuple[bool, str, Dict]:
         details["reachable"] = response.status_code == 200
         
         if response.status_code == 200:
-            logger.info(f"Ollama Cloud API reachable in {details['response_time_ms']}ms")
+            mode = "LOCAL" if Config.is_local_ollama() else "CLOUD"
+            logger.info(f"Ollama {mode} API reachable in {details['response_time_ms']}ms")
             
-            # For Ollama Cloud, we assume the model is available if API is reachable
+            # For Ollama (both local and cloud), we assume the model is available if API is reachable
             # The actual model availability is tested during inference
             details["model_available"] = True
             details["models_loaded"] = [Config.OLLAMA_MODEL_NAME]  # Assume target model is available
@@ -120,28 +146,28 @@ def check_ollama_health() -> Tuple[bool, str, Dict]:
             details["response_time_ms"] = inference_time
             
             if inference_ok:
-                logger.info(f"Ollama Cloud fully ready: inference working in {inference_time}ms")
+                logger.info(f"Ollama fully ready: inference working in {inference_time}ms")
                 return True, f"✅ Ready ({inference_time}ms)", details
             else:
                 details["error"] = error_msg
-                logger.warning(f"Ollama Cloud reachable but inference failed: {error_msg}")
+                logger.warning(f"Ollama reachable but inference failed: {error_msg}")
                 return False, f"⚠️ API reachable but inference failed: {error_msg[:50]}", details
         else:
-            logger.error(f"Ollama Cloud API returned status {response.status_code}")
+            logger.error(f"Ollama API returned status {response.status_code}")
             return False, f"❌ API error: {response.status_code}", details
             
     except requests.exceptions.Timeout:
         details["response_time_ms"] = int((time.time() - start) * 1000)
-        logger.warning(f"Ollama Cloud health check timeout after {details['response_time_ms']}ms")
+        logger.warning(f"Ollama health check timeout after {details['response_time_ms']}ms")
         return False, f"⏱️ Timeout after {details['response_time_ms']}ms", details
         
     except requests.exceptions.ConnectionError:
-        logger.error("Cannot connect to Ollama Cloud API")
-        return False, "🔌 Cannot connect to Ollama Cloud", details
+        logger.error("Cannot connect to Ollama API")
+        return False, "🔌 Cannot connect to Ollama API", details
         
     except Exception as e:
         error_msg = f"{type(e).__name__}: {str(e)}"
-        logger.error(f"Ollama Cloud health check failed: {error_msg}")
+        logger.error(f"Ollama health check failed: {error_msg}")
         details["error"] = error_msg
         return False, f"❌ {error_msg}", details
 
@@ -186,7 +212,8 @@ def wait_for_ollama_ready(max_wait_seconds: int = 300, check_interval: int = 5) 
 
 def get_model_info() -> Dict:
     """
-    Get information about the configured Ollama Cloud model
+    Get information about the configured Ollama model
+    Works with both local Ollama server and cloud Ollama API
     
     Returns:
         Dictionary with model information or error details
@@ -196,9 +223,9 @@ def get_model_info() -> Dict:
         if Config.OLLAMA_API_KEY:
             headers["Authorization"] = f"Bearer {Config.OLLAMA_API_KEY}"
         
-        # Try to get model info from Ollama Cloud API
+        # Try to get model info from Ollama API
         response = requests.get(
-            f"{Config.OLLAMA_BASE_URL}/show",
+            _get_endpoint('show'),
             params={"name": Config.OLLAMA_MODEL_NAME},
             headers=headers,
             timeout=10
@@ -206,30 +233,32 @@ def get_model_info() -> Dict:
         
         if response.status_code == 200:
             data = response.json()
+            mode = "Local" if Config.is_local_ollama() else "Cloud"
             
-            return {
-                "success": True,
-                "model_count": 1,  # Ollama Cloud typically has access to many models
-                "models": [{
-                    "name": Config.OLLAMA_MODEL_NAME,
-                    "size_gb": "Cloud-hosted",  # Size not available for cloud models
-                    "modified": "Cloud model"
-                }],
-                "target_model_loaded": True,  # Assume available if API responds
-                "model_details": data
-            }
-        else:
-            # Fallback: return basic info about configured model
             return {
                 "success": True,
                 "model_count": 1,
                 "models": [{
                     "name": Config.OLLAMA_MODEL_NAME,
-                    "size_gb": "Cloud-hosted",
-                    "modified": "Cloud model"
+                    "size_gb": f"{mode}-hosted",
+                    "modified": f"{mode} model"
                 }],
                 "target_model_loaded": True,
-                "note": "Model details not available from Ollama Cloud API"
+                "model_details": data
+            }
+        else:
+            # Fallback: return basic info about configured model
+            mode = "Local" if Config.is_local_ollama() else "Cloud"
+            return {
+                "success": True,
+                "model_count": 1,
+                "models": [{
+                    "name": Config.OLLAMA_MODEL_NAME,
+                    "size_gb": f"{mode}-hosted",
+                    "modified": f"{mode} model"
+                }],
+                "target_model_loaded": True,
+                "note": f"Model details not available from {mode} Ollama API"
             }
             
     except Exception as e:

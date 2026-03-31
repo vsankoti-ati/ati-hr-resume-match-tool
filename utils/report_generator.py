@@ -50,54 +50,54 @@ class ReportGenerator:
     
     def _setup_custom_styles(self):
         """Setup custom paragraph styles"""
-        # Title style (reduced by 10%)
+        # Title style (reduced for one-page fit)
         self.styles.add(ParagraphStyle(
             name='CustomTitle',
             parent=self.styles['Heading1'],
-            fontSize=22,
+            fontSize=16,
             textColor=colors.HexColor('#1f497d'),
-            spaceAfter=30,
+            spaceAfter=6,
             alignment=TA_CENTER,
             fontName='Helvetica-Bold'
         ))
         
-        # Heading style (reduced by 10%)
+        # Heading style (reduced for one-page fit)
         self.styles.add(ParagraphStyle(
             name='CustomHeading',
             parent=self.styles['Heading2'],
-            fontSize=14,
+            fontSize=10,
             textColor=colors.HexColor('#1f497d'),
-            spaceAfter=12,
-            spaceBefore=12,
+            spaceAfter=3,
+            spaceBefore=4,
             fontName='Helvetica-Bold'
         ))
         
-        # Subheading style (reduced by 10%)
+        # Subheading style (reduced for one-page fit)
         self.styles.add(ParagraphStyle(
             name='CustomSubHeading',
             parent=self.styles['Heading3'],
-            fontSize=11,
+            fontSize=8,
             textColor=colors.HexColor('#4472c4'),
-            spaceAfter=6,
+            spaceAfter=2,
             fontName='Helvetica-Bold'
         ))
         
-        # Body text style (reduced by 10%)
+        # Body text style (reduced for one-page fit)
         self.styles.add(ParagraphStyle(
             name='CustomBody',
             parent=self.styles['BodyText'],
-            fontSize=9,
+            fontSize=7,
             alignment=TA_JUSTIFY,
-            spaceAfter=6
+            spaceAfter=2
         ))
         
-        # Table cell style (reduced by 10%)
+        # Table cell style (reduced for one-page fit)
         self.styles.add(ParagraphStyle(
             name='TableCell',
             parent=self.styles['BodyText'],
-            fontSize=8,
+            fontSize=6.5,
             alignment=TA_LEFT,
-            leading=10,
+            leading=8,
             spaceAfter=0,
             spaceBefore=0
         ))
@@ -146,74 +146,44 @@ class ReportGenerator:
         # Title
         title = Paragraph(Config.REPORT_TITLE, self.styles['CustomTitle'])
         elements.append(title)
-        elements.append(Spacer(1, 0.2 * inch))
+        elements.append(Spacer(1, 0.05 * inch))
         
         # Extract candidate name from metadata
         metadata_dict = analysis_data.get('metadata', {})
         profile_filename = metadata_dict.get('profile_filename', 'Candidate')
         candidate_name = get_candidate_name_from_filename(profile_filename)
         
-        # Metadata table
-        metadata = [
-            ['Name:', candidate_name],
-            ['Generated:', datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
-            ['Analysis Tool:', Config.REPORT_AUTHOR]
-        ]
-        
-        metadata_table = Table(metadata, colWidths=[2*inch, 4*inch])
-        metadata_table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 0), (-1, -1), 8),
-            ('TEXTCOLOR', (0, 0), (0, -1), colors.grey),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ]))
-        
-        elements.append(metadata_table)
-        elements.append(Spacer(1, 0.3 * inch))
+        # Single line metadata: Name and Generated date combined
+        metadata_text = f"Name: {candidate_name} | Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        metadata_para = Paragraph(metadata_text, self.styles['CustomBody'])
+        elements.append(metadata_para)
+        elements.append(Spacer(1, 0.05 * inch))
         
         return elements
     
     def _create_overall_match_section(self, analysis_data: Dict[str, Any]) -> list:
-        """Create overall match percentage section"""
+        """Create overall match percentage section with inline header"""
         elements = []
         
-        # Section heading
-        heading = Paragraph("Overall Match Score", self.styles['CustomHeading'])
-        elements.append(heading)
-        
-        # Match percentage (no border, reduced font size)
+        # Match percentage with header in one line
         percentage = analysis_data.get('overall_match_percentage', 0)
         match_color = self._get_match_color(percentage)
         
-        match_data = [[
-            Paragraph(f"<font size=28 color={match_color.hexval()}><b>{percentage}%</b></font>",
-                     self.styles['CustomBody'])
-        ]]
-        
-        match_table = Table(match_data, colWidths=[6*inch])
-        match_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8f9fa')),
-            ('TOPPADDING', (0, 0), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-            ('LEFTPADDING', (0, 0), (-1, -1), 12),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 12)
-        ]))
-        
-        elements.append(match_table)
-        elements.append(Spacer(1, 0.2 * inch))
+        match_text = f"<b>Overall Match Score:</b> <font size=16 color={match_color.hexval()}><b>{percentage}%</b></font>"
+        match_para = Paragraph(match_text, self.styles['CustomHeading'])
+        elements.append(match_para)
+        elements.append(Spacer(1, 0.05 * inch))
         
         # Summary
         summary = analysis_data.get('match_summary', 'No summary available')
         summary_para = Paragraph(summary, self.styles['CustomBody'])
         elements.append(summary_para)
-        elements.append(Spacer(1, 0.3 * inch))
+        elements.append(Spacer(1, 0.08 * inch))
         
         return elements
     
     def _create_matching_skills_section(self, analysis_data: Dict[str, Any]) -> list:
-        """Create matching skills section as a 4-column table"""
+        """Create matching skills section as a 2-column table (optimized for one-page)"""
         elements = []
         
         heading = Paragraph("Matching Skills & Qualifications", self.styles['CustomHeading'])
@@ -221,54 +191,51 @@ class ReportGenerator:
         
         matching_skills = analysis_data.get('matching_skills', {})
         
-        # Prepare data for 4-column table
+        # Prepare data for 2-column table
         technical_skills = matching_skills.get('technical_skills', [])
         soft_skills = matching_skills.get('soft_skills', [])
         qualifications = matching_skills.get('qualifications', [])
         experience_areas = matching_skills.get('experience_areas', [])
         
-        # Create bullet list strings for each column
-        def format_list(items):
+        # Create bullet list strings for each section, limit to top 5
+        def format_list(items, max_items=5):
             if not items:
                 return "None"
-            return '<br/>'.join([f"• {item}" for item in items])
+            limited = items[:max_items]
+            return '<br/>'.join([f"• {item}" for item in limited])
         
-        # Build table data
+        # Build table data - 2 columns
         table_data = [
             # Header row
             [
-                Paragraph('<b>Technical Skills</b>', self.styles['TableCell']),
-                Paragraph('<b>Soft Skills</b>', self.styles['TableCell']),
-                Paragraph('<b>Qualifications</b>', self.styles['TableCell']),
-                Paragraph('<b>Experience Areas</b>', self.styles['TableCell'])
+                Paragraph('<b>Technical Skills & Qualifications</b>', self.styles['TableCell']),
+                Paragraph('<b>Soft Skills & Experience</b>', self.styles['TableCell'])
             ],
             # Data row
             [
-                Paragraph(format_list(technical_skills), self.styles['TableCell']),
-                Paragraph(format_list(soft_skills), self.styles['TableCell']),
-                Paragraph(format_list(qualifications), self.styles['TableCell']),
-                Paragraph(format_list(experience_areas), self.styles['TableCell'])
+                Paragraph(format_list(technical_skills) + '<br/>' + format_list(qualifications), self.styles['TableCell']),
+                Paragraph(format_list(soft_skills) + '<br/>' + format_list(experience_areas), self.styles['TableCell'])
             ]
         ]
         
-        # Create table with equal column widths
-        skills_table = Table(table_data, colWidths=[1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch])
+        # Create table with 2 equal column widths
+        skills_table = Table(table_data, colWidths=[3*inch, 3*inch])
         skills_table.setStyle(TableStyle([
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('FONTSIZE', (0, 0), (-1, -1), 6.5),
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1f497d')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-            ('LEFTPADDING', (0, 0), (-1, -1), 6),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-            ('TOPPADDING', (0, 0), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('LEFTPADDING', (0, 0), (-1, -1), 3),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
         ]))
         
         elements.append(skills_table)
-        elements.append(Spacer(1, 0.3 * inch))
+        elements.append(Spacer(1, 0.08 * inch))
         return elements
     
     def _create_detailed_matches_section(self, analysis_data: Dict[str, Any]) -> list:
@@ -281,8 +248,8 @@ class ReportGenerator:
         detailed_matches = analysis_data.get('detailed_matches', [])
         
         if detailed_matches:
-            # Limit to top 10 matches to prevent overflow
-            matches_to_show = detailed_matches[:10]
+            # Limit to top 5 matches for one-page fit
+            matches_to_show = detailed_matches[:5]
             
             # Build table data starting with header
             table_data = [
@@ -312,16 +279,16 @@ class ReportGenerator:
             # Build style rules
             style_rules = [
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, -1), 8),
+                ('FONTSIZE', (0, 0), (-1, -1), 6.5),
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1f497d')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                 ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                ('LEFTPADDING', (0, 0), (-1, -1), 4),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 4),
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('LEFTPADDING', (0, 0), (-1, -1), 2),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+                ('TOPPADDING', (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
             ]
             
             # Add alternating row backgrounds
@@ -334,17 +301,17 @@ class ReportGenerator:
             elements.append(match_table)
             
             # Add note if there are more matches than shown
-            if len(detailed_matches) > 10:
+            if len(detailed_matches) > 5:
                 note = Paragraph(
-                    f"<i>Note: Showing top 10 of {len(detailed_matches)} matches</i>",
+                    f"<i>Note: Showing top 5 of {len(detailed_matches)} matches</i>",
                     self.styles['CustomBody']
                 )
-                elements.append(Spacer(1, 0.1 * inch))
+                elements.append(Spacer(1, 0.03 * inch))
                 elements.append(note)
         else:
             elements.append(Paragraph("No detailed matches available", self.styles['CustomBody']))
         
-        elements.append(Spacer(1, 0.3 * inch))
+        elements.append(Spacer(1, 0.08 * inch))
         return elements
     
     def _create_gaps_section(self, analysis_data: Dict[str, Any]) -> list:
@@ -357,6 +324,8 @@ class ReportGenerator:
         gaps = analysis_data.get('gaps_in_profile', [])
         
         if gaps:
+            # Limit to top 5 gaps for one-page fit
+            gaps = gaps[:5]
             # Build table data starting with header
             table_data = [
                 [
@@ -388,23 +357,23 @@ class ReportGenerator:
             gap_table = Table(table_data, colWidths=[1.8*inch, 1.0*inch, 2.2*inch, 1.0*inch])
             gap_table.setStyle(TableStyle([
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, -1), 8),
+                ('FONTSIZE', (0, 0), (-1, -1), 6.5),
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#fff3cd')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                 ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                ('LEFTPADDING', (0, 0), (-1, -1), 6),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('LEFTPADDING', (0, 0), (-1, -1), 3),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+                ('TOPPADDING', (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
             ]))
             
             elements.append(gap_table)
         else:
             elements.append(Paragraph("No significant gaps identified", self.styles['CustomBody']))
         
-        elements.append(Spacer(1, 0.3 * inch))
+        elements.append(Spacer(1, 0.08 * inch))
         return elements
     
     def _create_strengths_section(self, analysis_data: Dict[str, Any]) -> list:
@@ -417,6 +386,8 @@ class ReportGenerator:
         strengths = analysis_data.get('profile_strengths', [])
         
         if strengths:
+            # Limit to top 5 strengths for one-page fit
+            strengths = strengths[:5]
             # Build table data starting with header
             table_data = [
                 [
@@ -439,27 +410,27 @@ class ReportGenerator:
             strength_table = Table(table_data, colWidths=[2.0*inch, 2.0*inch, 2.0*inch])
             strength_table.setStyle(TableStyle([
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, -1), 8),
+                ('FONTSIZE', (0, 0), (-1, -1), 6.5),
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#d4edda')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                 ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                ('LEFTPADDING', (0, 0), (-1, -1), 6),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('LEFTPADDING', (0, 0), (-1, -1), 3),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+                ('TOPPADDING', (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
             ]))
             
             elements.append(strength_table)
         else:
             elements.append(Paragraph("No specific strengths highlighted", self.styles['CustomBody']))
         
-        elements.append(Spacer(1, 0.3 * inch))
+        elements.append(Spacer(1, 0.08 * inch))
         return elements
     
     def _create_anomalies_section(self, analysis_data: Dict[str, Any]) -> list:
-        """Create anomalies section"""
+        """Create anomalies section with column-based table"""
         elements = []
         
         heading = Paragraph("Anomalies & Discrepancies", self.styles['CustomHeading'])
@@ -468,6 +439,21 @@ class ReportGenerator:
         anomalies = analysis_data.get('anomalies', [])
         
         if anomalies:
+            # Limit to top 3 anomalies for one-page fit
+            anomalies = anomalies[:3]
+            
+            # Build column-based table: headers as columns
+            table_data = [
+                # Header row
+                [
+                    Paragraph('<b>Type</b>', self.styles['TableCell']),
+                    Paragraph('<b>Severity</b>', self.styles['TableCell']),
+                    Paragraph('<b>Description</b>', self.styles['TableCell']),
+                    Paragraph('<b>Recommendation</b>', self.styles['TableCell'])
+                ]
+            ]
+            
+            # Add data rows
             for anomaly in anomalies:
                 severity = anomaly.get('severity', 'N/A')
                 severity_color = {
@@ -476,33 +462,39 @@ class ReportGenerator:
                     'Low': colors.blue
                 }.get(severity, colors.black)
                 
-                anomaly_data = [
-                    [self._create_table_cell('Type:'), self._create_table_cell(anomaly.get('type', 'N/A'))],
-                    [self._create_table_cell('Severity:'), Paragraph(f'<font color={severity_color.hexval()}><b>{severity}</b></font>', self.styles['TableCell'])],
-                    [self._create_table_cell('Description:'), self._create_table_cell(anomaly.get('description', 'N/A'))],
-                    [self._create_table_cell('Recommendation:'), self._create_table_cell(anomaly.get('recommendation', 'N/A'))]
+                row = [
+                    self._create_table_cell(anomaly.get('type', 'N/A')),
+                    Paragraph(f'<font color={severity_color.hexval()}><b>{severity}</b></font>', self.styles['TableCell']),
+                    self._create_table_cell(anomaly.get('description', 'N/A')),
+                    self._create_table_cell(anomaly.get('recommendation', 'N/A'))
                 ]
-                
-                anomaly_table = Table(anomaly_data, colWidths=[1.5*inch, 4.5*inch])
-                anomaly_table.setStyle(TableStyle([
-                    ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, -1), 8),
-                    ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8d7da')),
-                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                    ('LEFTPADDING', (0, 0), (-1, -1), 6),
-                ]))
-                
-                elements.append(anomaly_table)
-                elements.append(Spacer(1, 0.15 * inch))
+                table_data.append(row)
+            
+            # Create table with column widths
+            anomaly_table = Table(table_data, colWidths=[0.8*inch, 0.6*inch, 2.3*inch, 2.3*inch])
+            anomaly_table.setStyle(TableStyle([
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 6.5),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8d7da')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 3),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+                ('TOPPADDING', (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ]))
+            
+            elements.append(anomaly_table)
         else:
             elements.append(Paragraph("No anomalies detected", self.styles['CustomBody']))
         
-        elements.append(Spacer(1, 0.2 * inch))
+        elements.append(Spacer(1, 0.06 * inch))
         return elements
     
     def _create_hr_recommendation_section(self, analysis_data: Dict[str, Any]) -> list:
-        """Create HR recommendation section (without interview questions)"""
+        """Create HR recommendation section in tabular format"""
         elements = []
         
         # === HR Recommendation ===
@@ -514,50 +506,52 @@ class ReportGenerator:
         reasoning = hr_recommendation.get('reasoning', 'No reasoning provided')
         key_considerations = hr_recommendation.get('key_considerations', [])
         
-        # Decision box with color coding
+        # Decision color
         decision_color = {
             'Proceed to Interview': colors.HexColor('#28a745'),  # Green
             'Consider with Reservations': colors.HexColor('#ffc107'),  # Yellow
             'Do Not Proceed': colors.HexColor('#dc3545')  # Red
         }.get(decision, colors.HexColor('#6c757d'))  # Default gray
         
-        decision_data = [[
-            Paragraph(f"<font size=18 color={decision_color.hexval()}><b>{decision}</b></font>",
-                     self.styles['CustomBody'])
-        ]]
+        # Format key considerations as bullet list
+        considerations_text = "None"
+        if key_considerations:
+            limited_considerations = key_considerations[:3]
+            considerations_text = '<br/>'.join([f"• {c}" for c in limited_considerations])
         
-        decision_table = Table(decision_data, colWidths=[6*inch])
-        decision_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BOX', (0, 0), (-1, -1), 2, decision_color),
-            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8f9fa')),
-            ('TOPPADDING', (0, 0), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-            ('LEFTPADDING', (0, 0), (-1, -1), 12),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 12)
+        # Build tabular structure
+        hr_table_data = [
+            # Header row
+            [
+                Paragraph('<b>Decision</b>', self.styles['TableCell']),
+                Paragraph('<b>Reasoning</b>', self.styles['TableCell']),
+                Paragraph('<b>Key Considerations</b>', self.styles['TableCell'])
+            ],
+            # Data row
+            [
+                Paragraph(f'<font color={decision_color.hexval()}><b>{decision}</b></font>', self.styles['TableCell']),
+                self._create_table_cell(reasoning),
+                Paragraph(considerations_text, self.styles['TableCell'])
+            ]
+        ]
+        
+        hr_table = Table(hr_table_data, colWidths=[1.3*inch, 2.4*inch, 2.3*inch])
+        hr_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 6.5),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('LEFTPADDING', (0, 0), (-1, -1), 3),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
         ]))
         
-        elements.append(decision_table)
-        elements.append(Spacer(1, 0.2 * inch))
-        
-        # Reasoning
-        subheading = Paragraph("Reasoning", self.styles['CustomSubHeading'])
-        elements.append(subheading)
-        reasoning_para = Paragraph(reasoning, self.styles['CustomBody'])
-        elements.append(reasoning_para)
-        elements.append(Spacer(1, 0.2 * inch))
-        
-        # Key Considerations
-        if key_considerations:
-            subheading = Paragraph("Key Considerations for HR", self.styles['CustomSubHeading'])
-            elements.append(subheading)
-            
-            for consideration in key_considerations:
-                bullet = Paragraph(f"• {consideration}", self.styles['CustomBody'])
-                elements.append(bullet)
-            
-            elements.append(Spacer(1, 0.3 * inch))
+        elements.append(hr_table)
+        elements.append(Spacer(1, 0.08 * inch))
         
         return elements
     
@@ -572,31 +566,31 @@ class ReportGenerator:
         technical_questions = interview_questions.get('technical_questions', [])
         behavioral_questions = interview_questions.get('behavioral_questions', [])
         
-        # Technical Questions
+        # Technical Questions - limit to top 3
         if technical_questions:
             subheading = Paragraph("Technical Questions", self.styles['CustomSubHeading'])
             elements.append(subheading)
             
-            for question in technical_questions:
+            for question in technical_questions[:3]:
                 bullet = Paragraph(f"• {question}", self.styles['CustomBody'])
                 elements.append(bullet)
             
-            elements.append(Spacer(1, 0.2 * inch))
+            elements.append(Spacer(1, 0.05 * inch))
         
-        # Behavioral Questions
+        # Behavioral Questions - limit to top 3
         if behavioral_questions:
             subheading = Paragraph("Behavioral Questions", self.styles['CustomSubHeading'])
             elements.append(subheading)
             
-            for question in behavioral_questions:
+            for question in behavioral_questions[:3]:
                 bullet = Paragraph(f"• {question}", self.styles['CustomBody'])
                 elements.append(bullet)
             
-            elements.append(Spacer(1, 0.2 * inch))
+            elements.append(Spacer(1, 0.05 * inch))
         
         if not technical_questions and not behavioral_questions:
             elements.append(Paragraph("No interview questions available", self.styles['CustomBody']))
-            elements.append(Spacer(1, 0.2 * inch))
+            elements.append(Spacer(1, 0.05 * inch))
         
         return elements
     
@@ -616,15 +610,15 @@ class ReportGenerator:
             PDF as bytes if output_filename is None, else None
         """
         try:
-            # Create PDF document
+            # Create PDF document with reduced margins for one-page fit
             if output_filename:
                 doc = SimpleDocTemplate(
                     output_filename,
                     pagesize=self.page_size,
-                    topMargin=0.75*inch,
-                    bottomMargin=0.75*inch,
-                    leftMargin=0.75*inch,
-                    rightMargin=0.75*inch
+                    topMargin=0.4*inch,
+                    bottomMargin=0.4*inch,
+                    leftMargin=0.5*inch,
+                    rightMargin=0.5*inch
                 )
                 buffer = None
             else:
@@ -632,28 +626,24 @@ class ReportGenerator:
                 doc = SimpleDocTemplate(
                     buffer,
                     pagesize=self.page_size,
-                    topMargin=0.75*inch,
-                    bottomMargin=0.75*inch,
-                    leftMargin=0.75*inch,
-                    rightMargin=0.75*inch
+                    topMargin=0.4*inch,
+                    bottomMargin=0.4*inch,
+                    leftMargin=0.5*inch,
+                    rightMargin=0.5*inch
                 )
             
             # Build report elements
             elements = []
             
-            # Add sections
+            # Add all sections on ONE PAGE (no page breaks)
             elements.extend(self._create_header(analysis_data))
             elements.extend(self._create_overall_match_section(analysis_data))
             elements.extend(self._create_matching_skills_section(analysis_data))
             elements.extend(self._create_hr_recommendation_section(analysis_data))
-            elements.append(PageBreak())
             elements.extend(self._create_detailed_matches_section(analysis_data))
-            elements.append(PageBreak())
             elements.extend(self._create_gaps_section(analysis_data))
             elements.extend(self._create_strengths_section(analysis_data))
-            elements.append(PageBreak())
             elements.extend(self._create_anomalies_section(analysis_data))
-            elements.append(PageBreak())
             elements.extend(self._create_interview_questions_section(analysis_data))
             
             # Build PDF
