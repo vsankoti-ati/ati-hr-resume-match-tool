@@ -5,7 +5,7 @@ atiproductsregistry.azurecr.io
 
 docker build --platform linux/amd64 -t ati-hr-resume-matcher .
 
-docker tag ati-hr-resume-matcher atiproductsregistry.azurecr.io/ati-hr-resume-matcher:1.1
+docker tag ati-hr-resume-matcher atiproductsregistry.azurecr.io/ati-hr-resume-matcher:2.0
 
-docker push atiproductsregistry.azurecr.io/ati-hr-resume-matcher:1.1
+docker push atiproductsregistry.azurecr.io/ati-hr-resume-matcher:2.0
 
